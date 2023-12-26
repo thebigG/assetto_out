@@ -1,0 +1,3 @@
+[submodule "src/pyserial"]
+	path = src/pyserial
+	url = https://github.com/pyserial/pyserial.git
