@@ -1,43 +1,26 @@
 import sys
-import ac
-import acsys
 import json
-# import serial
-# from hello_world_test.hello_world import hello_world, get_hello_world
-
-l_lapcount=0
-lapcount=0
-ser = None
+import time
+from multiprocessing import shared_memory
+from pyacc.acc_types import SPageFilePhysics, SPageFileGraphic, SPageFileStatic
 
 
-def acMain(ac_version):
-    global ser
-    appWindow = ac.newApp("assetto_hub")
-    ac.setSize(appWindow, 200, 200)
-    ac.log("***************1")
-    # ser = serial.Serial('COM6', baudrate=9600, timeout=1)
-    ac.log("***************2")
-    return "assetto_hub_app"
-
-def acUpdate(deltaT):
-   global l_lapcount, lapcount, ser
-   brake_pression = ac.getCarState(0, acsys.CS.Brake)
-   json_data = dict()
-   ac.log("***************3")
-   # out_data =
-   json_data["brake"] = brake_pression
-   ac.log("***************4")
-   json_data = json.dumps(json_data)
-   ac.log("json data:{}".format(json_data))
-   ac.log("***************5")
-   # ac.log("From module:{}".format(get_hello_world()))
-   # ac.log("serial data:{}".format(ser.rseadline()))
-   # if laps > lapcount:
-   #    lapcount = laps
-   #    ac.setText(l_lapcount, "Laps: {}".format(lapcount))
+acc_types = {
+    'acpmf_physics': SPageFilePhysics,
+    'acpmf_graphics': SPageFileGraphic,
+    'acpmf_static': SPageFileStatic,
+}
 
 
-# def test():
-#     hello_world()
-#
-# test()
+def test():
+    corsa_shared_mem = "acpmf_physics"
+    corsa_shm = shared_memory.SharedMemory(name=corsa_shared_mem)
+    while True:
+        # print("serial line:{}".format(ser.readline()))
+        _obj = acc_types["acpmf_physics"].from_buffer(corsa_shm.buf)
+        buffer = corsa_shm.buf
+        print(bytes(buffer[8:12]))
+        print("obj:{}".format(_obj.brake))
+        time.sleep(0.5)
+
+test()
