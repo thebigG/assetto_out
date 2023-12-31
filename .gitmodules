@@ -1,3 +1,6 @@
 [submodule "src/pyserial"]
 	path = src/pyserial
 	url = https://github.com/pyserial/pyserial.git
+[submodule "src/pyacc"]
+	path = src/pyacc
+	url = git@github.com:gotzl/pyacc.git
