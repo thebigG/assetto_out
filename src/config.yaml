@@ -1,0 +1,2 @@
+mode: SERIAL # Supported modes: SERIAL
+port: "COM6"
