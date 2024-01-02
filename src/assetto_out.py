@@ -2,8 +2,12 @@ import sys
 import json
 import time
 from multiprocessing import shared_memory
-from pyacc.acc_types import SPageFilePhysics, SPageFileGraphic, SPageFileStatic
 
+import _ctypes
+
+from pyacc.acc_types import SPageFilePhysics, SPageFileGraphic, SPageFileStatic
+from ctypes import LittleEndianStructure, c_int, c_float, Array
+import ctypes.wintypes
 import argparse
 
 # The following import assumes that "src" is the current working directory
@@ -50,7 +54,9 @@ def parse_cli():
 def main():
     args = parse_cli()
     print(f"args: {args.config}")
+    corsa_physics = SPageFilePhysics()
     config = None
+    data_count = 0
     with open(args.config) as file:
         config = yaml.safe_load(file)
     # print(f"config:{config}")
@@ -73,10 +79,23 @@ def main():
             exit(-1)
         while True:
             _obj = acc_types["acpmf_physics"].from_buffer(corsa_shm.buf)
-            json_out["brake"] = _obj.brake
-            data_out = json.dumps(json_out)
+            _obj_dict = fields_to_dict(_obj)
+            data_out = json.dumps(_obj_dict)
+            # print(f"data_out:{data_out}")
             ser.write(bytes(data_out, "utf8"))
-            time.sleep(0.5)
+            print(f"data_count:{data_count}")
+            data_count += 1
+            # time.sleep(0.5)
+
+
+def fields_to_dict(corsa_obj):
+    fields_dict = dict()
+    for f in corsa_obj._fields_:
+        # TODO:Add support for arrays
+        if type(f[1]).__name__ == 'PyCSimpleType':
+            fields_dict[f[0]] = getattr(corsa_obj, f[0])
+
+    return fields_dict
 
 
 main()
