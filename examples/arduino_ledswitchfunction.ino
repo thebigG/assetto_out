@@ -1,3 +1,8 @@
+/**
+Author: Eury Gomez or euryg13
+Date: 12/31/23
+*/ 
+
 #include <ArduinoJson.h>
 
 int LED = 13;
