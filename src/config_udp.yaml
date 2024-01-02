@@ -1,0 +1,3 @@
+mode: UDP # Supported modes: SERIAL, UDP
+port: 2390 # For example; COM6 for serial mode, 9090 for UDP mode
+host: "10.0.0.197" # For UDP Mode

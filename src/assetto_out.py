@@ -18,6 +18,9 @@ import yaml
 
 import serial.tools.list_ports as list_ports
 
+import socket
+import sys
+
 # https://assettocorsamods.net/threads/doc-shared-memory-reference.58/
 acc_types = {
     'acpmf_physics': SPageFilePhysics,
@@ -61,16 +64,16 @@ def main():
         config = yaml.safe_load(file)
     # print(f"config:{config}")
     mode = config["mode"]
+    # TODO: move corsa_shared_mem to config file
+    corsa_shared_mem = "acpmf_physics"
+    try:
+        corsa_shm = shared_memory.SharedMemory(name=corsa_shared_mem)
+    except:
+        print(f"Shared memory block '{corsa_shared_mem}' not available. Are you sure Assetto Corsa is running?")
+        exit(-1)
     # print(list_ports.comports()[0].hwid)
     if mode == "SERIAL":
         serial_port = config["port"]
-        # TODO: move corsa_shared_mem to config file
-        corsa_shared_mem = "acpmf_physics"
-        try:
-            corsa_shm = shared_memory.SharedMemory(name=corsa_shared_mem)
-        except:
-            print(f"Shared memory block '{corsa_shared_mem}' not available. Are you sure Assetto Corsa is running?")
-            exit(-1)
         try:
             ser = serial.Serial(serial_port, baudrate=9600, timeout=1)
         except:
@@ -82,10 +85,28 @@ def main():
             _obj_dict = fields_to_dict(_obj)
             data_out = json.dumps(_obj_dict)
             # print(f"data_out:{data_out}")
-            ser.write(bytes(data_out, "utf8"))
-            print(f"data_count:{data_count}")
+            data = bytes(data_out, "utf8")
+            ser.write(data)
+            print(f"TX count:{data_count}")
+            print(f"{len(data)} bytes sent")
             data_count += 1
             # time.sleep(0.5)
+    elif mode == "UDP":
+        while True:
+            _obj = acc_types["acpmf_physics"].from_buffer(corsa_shm.buf)
+            _obj_dict = fields_to_dict(_obj)
+            data_out = json.dumps(_obj_dict)
+            HOST, PORT = config['host'], config['port']
+            # SOCK_DGRAM is the socket type to use for UDP sockets
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+            data = bytes(data_out + "\n", "utf8")
+            sock.sendto(data, (HOST, PORT))
+            print(f"TX count:{data_count}")
+            print(f"{len(data)} bytes sent")
+            data_count += 1
+    else:
+        print(f"Mode '{mode}' is not supported.")
 
 
 def fields_to_dict(corsa_obj):
