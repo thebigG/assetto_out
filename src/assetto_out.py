@@ -46,26 +46,37 @@ def parse_cli():
 
     return parser.parse_args()
 
+
 def main():
     args = parse_cli()
     print(f"args: {args.config}")
     config = None
     with open(args.config) as file:
         config = yaml.safe_load(file)
-    print(f"config:{config}")
+    # print(f"config:{config}")
     mode = config["mode"]
     # print(list_ports.comports()[0].hwid)
     if mode == "SERIAL":
         serial_port = config["port"]
         # TODO: move corsa_shared_mem to config file
         corsa_shared_mem = "acpmf_physics"
-        corsa_shm = shared_memory.SharedMemory(name=corsa_shared_mem)
-        ser = serial.Serial(serial_port, baudrate=9600, timeout=1)
+        try:
+            corsa_shm = shared_memory.SharedMemory(name=corsa_shared_mem)
+        except:
+            print(f"Shared memory block '{corsa_shared_mem}' not available. Are you sure Assetto Corsa is running?")
+            exit(-1)
+        try:
+            ser = serial.Serial(serial_port, baudrate=9600, timeout=1)
+        except:
+            print(f"Not able to open '{serial_port}'. Ensure this port is not being used by any other applications"
+                  f" and is plugged in.")
+            exit(-1)
         while True:
             _obj = acc_types["acpmf_physics"].from_buffer(corsa_shm.buf)
             json_out["brake"] = _obj.brake
             data_out = json.dumps(json_out)
             ser.write(bytes(data_out, "utf8"))
             time.sleep(0.5)
+
 
 main()
